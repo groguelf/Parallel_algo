@@ -134,7 +134,7 @@ void mult_mat_vector_tri_inf1 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(static), private(j)
+ #pragma omp parallel for schedule(static), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
@@ -157,7 +157,7 @@ void mult_mat_vector_tri_inf2 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(dynamic), private(j)
+ #pragma omp parallel for schedule(dynamic), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
@@ -175,6 +175,18 @@ void mult_mat_vector_tri_inf3 (matrix M, vector b, vector c)
      this function is parallel (with OpenMP directive, guided scheduling)
      Computes the Multiplication between the vector b and the Triangular Lower Matrix
  */
+ register unsigned int i;
+ register unsigned int j;
+ register double r;
+
+ #pragma omp parallel for schedule(guided), private(j, r)
+ for (i = 0; i < N; i++){
+   r = 0.0;
+   for (j = 0; j <= i; j++){
+     r += M[i][j] * b[j];
+   }
+   c[i] = r;
+ }
 
   return ;
 }
@@ -185,6 +197,19 @@ void mult_mat_vector_tri_inf4 (matrix M, vector b, vector c)
      this function is parallel (with OpenMP directive, runtime scheduling)
      Computes the Multiplication between the vector b and the Triangular Lower Matrix
  */
+
+ register unsigned int i;
+ register unsigned int j;
+ register double r;
+
+ #pragma omp parallel for schedule(runtime), private(j, r)
+ for (i = 0; i < N; i++){
+   r = 0.0;
+   for (j = 0; j <= i; j++){
+     r += M[i][j] * b[j];
+   }
+   c[i] = r;
+ }
 
   return ;
 }
