@@ -1,10 +1,13 @@
-all: triangular_matrix
+all: triangular_matrix bubble
 
 triangular_matrix: triangular_matrix.o
 	gcc -fopenmp -o triangular_matrix triangular_matrix.o
 
-triangular_matrix.o: triangular_matrix.c
-	gcc -c -O0 -fopenmp triangular_matrix.c
+bubble: bubble.o
+	gcc -fopenmp -o bubble bubble.o
+
+%.o: %.c
+	gcc -c -O0 -fopenmp $^
 
 clean:
-	rm -f triangular_matrix triangular_matrix.o *~
+	rm -f triangle_matrix bubble *.o *~
