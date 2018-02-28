@@ -10,4 +10,4 @@ bubble: bubble.o
 	gcc -c -O0 -fopenmp $^
 
 clean:
-	rm -f triangle_matrix bubble *.o *~
+	rm -f triangular_matrix bubble *.o *~
