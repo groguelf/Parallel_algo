@@ -149,12 +149,14 @@ void parallel_qsort_sort (int *T, const int size)
        if (i == 0){
          num_threads = omp_get_num_threads();
        }
+       // We have omp_get_num_threads() which can divise size, otherwise we can't use the merge function
        qsort(&T[i], size/omp_get_num_threads(), sizeof(int), compare);
      }
-     if (size%num_threads != 0){
-       qsort(&T[size - size/num_threads], size%num_threads, sizeof(int), compare);
-     }
-     print_array(T);
+     /*if (size%num_threads != 0){
+       qsort(&T[size-1 - size%num_threads], size%num_threads, sizeof(int), compare);
+     }*/
+     merge(T, size/num_threads);
+     //print_array(T);
      return ;
 
 }
