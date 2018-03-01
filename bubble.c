@@ -79,7 +79,7 @@ void sequential_bubble_sort (int *T, const int size)
 
     do {
       swapped = false;
-      for (i = 0; i < size; i++){
+      for (i = 0; i < size-1; i++){
         if (T[i] > T[i+1]){
           tmp = T[i];
           T[i] = T[i+1];
@@ -101,12 +101,13 @@ void parallel_bubble_sort (int *T, const int size)
     register int i;
     register int j;
     register int k;
+    int max = 0;
 
     do {
       swapped = false;
       #pragma omp parallel for schedule(dynamic) private(j, tmp) reduction(||:swapped)
-      for (i = 0; i < size/omp_get_num_threads(); i ++){
-        for(j = i*size/omp_get_num_threads(); j < (i+1)*size/omp_get_num_threads(); j++){
+      for (i = 0; i < size/omp_get_num_threads()+1; i++){
+        for(j = i*omp_get_num_threads(); j < (i+1)*omp_get_num_threads()-1; j++){;
           if (j < size-1 && T[j] > T[j+1]){
             tmp = T[j];
             T[j] = T[j+1];
@@ -116,7 +117,7 @@ void parallel_bubble_sort (int *T, const int size)
         }
       }
       #pragma omp parallel for schedule(dynamic) private(tmp) reduction(||:swapped)
-      for (k = size/omp_get_num_threads(); k < size-1; k += size/omp_get_num_threads()){
+      for (k = omp_get_num_threads()-1; k < size-1; k += omp_get_num_threads()){
         if (T[k] > T[k+1]){
           tmp = T[k];
           T[k] = T[k+1];
