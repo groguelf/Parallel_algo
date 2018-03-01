@@ -10,7 +10,7 @@
 
 static long long unsigned int experiments [NBEXPERIMENTS] ;
 
-/* 
+/*
   quick sort -- sequential, parallel --
 */
 
@@ -44,7 +44,7 @@ void print_array (array_int T)
 int is_sorted (array_int T)
 {
     register int i ;
-  
+
   for (i = 1 ; i < N ; i++)
     {
         /* test designed specifically for our usecase */
@@ -74,7 +74,7 @@ static int compare (const void *x, const void *y)
 
     /* cast x and y to int* before comparing */
     return *((int *) x) - *((int *) y);
-    
+
 }
 
 void sequential_qsort_sort (int *T, const int size)
@@ -85,7 +85,7 @@ void sequential_qsort_sort (int *T, const int size)
     return ;
 }
 
-/* 
+/*
    Merge two sorted chunks of array T!
    The two chunks are of size size
    First chunck starts at T[0], second chunck starts at T[size]
@@ -93,11 +93,11 @@ void sequential_qsort_sort (int *T, const int size)
 void merge (int *T, const int size)
 {
   int *X = (int *) malloc (2 * size * sizeof(int)) ;
-  
+
   int i = 0 ;
   int j = size ;
   int k = 0 ;
-  
+
   while ((i < size) && (j < 2*size))
     {
       if (T[i] < T [j])
@@ -127,10 +127,10 @@ void merge (int *T, const int size)
 	  X [k] = T [j] ;
 	}
     }
-  
+
   memcpy (T, X, 2*size*sizeof(int)) ;
   free (X) ;
-  
+
   return ;
 }
 
@@ -139,8 +139,23 @@ void merge (int *T, const int size)
 void parallel_qsort_sort (int *T, const int size)
 {
 
-    /* TODO: parallel sorting based on libc qsort() function +
+    /* parallel sorting based on libc qsort() function +
      * sequential merging */
+     register int i;
+     int num_threads = 0;
+
+     #pragma omp parallel for schedule(dynamic)
+     for (i = 0; i < size; i += size/omp_get_num_threads()){
+       if (i == 0){
+         num_threads = omp_get_num_threads();
+       }
+       qsort(&T[i], size/omp_get_num_threads(), sizeof(int), compare);
+     }
+     if (size%num_threads != 0){
+       qsort(&T[size - size/num_threads], size%num_threads, sizeof(int), compare);
+     }
+     print_array(T);
+     return ;
 
 }
 
@@ -159,7 +174,7 @@ int main (int argc, char **argv)
   unsigned long long int start, end, residu ;
   unsigned long long int av ;
   unsigned int exp ;
-  
+
   if (argc != 2)
     {
       fprintf (stderr, "qsort N \n") ;
@@ -170,21 +185,21 @@ int main (int argc, char **argv)
   X = (int *) malloc (N * sizeof(int)) ;
 
   printf("--> Sorting an array of size %u\n",N);
-  
+
   start = _rdtsc () ;
   end   = _rdtsc () ;
   residu = end - start ;
 
   printf("sequential sorting ...\n");
-  
+
   for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
       init_array (X) ;
-      
+
       start = _rdtsc () ;
 
       sequential_qsort_sort (X, N) ;
-     
+
       end = _rdtsc () ;
       experiments [exp] = end - start ;
 
@@ -193,22 +208,22 @@ int main (int argc, char **argv)
             exit (-1) ;
         }
     }
-  
-  av = average (experiments) ;  
+
+  av = average (experiments) ;
   printf ("\n qsort serial\t\t %Ld cycles\n\n", av-residu) ;
 
 
   printf("parallel (seq merge) ...\n");
-    
-  
+
+
   for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
       init_array (X) ;
-      
+
       start = _rdtsc () ;
 
       parallel_qsort_sort (X, N) ;
-     
+
       end = _rdtsc () ;
       experiments [exp] = end - start ;
 
@@ -216,9 +231,9 @@ int main (int argc, char **argv)
 	{
             fprintf(stderr, "ERROR: the array is not properly sorted\n") ;
             exit (-1) ;
-	}      
+	}
     }
-  
+
   av = average (experiments) ;
   printf ("\n qsort parallel (seq merge) \t %Ld cycles\n\n", av-residu) ;
 
@@ -228,11 +243,11 @@ int main (int argc, char **argv)
   for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
       init_array (X) ;
-      
+
       start = _rdtsc () ;
 
       parallel_qsort_sort1 (X, N) ;
-     
+
       end = _rdtsc () ;
       experiments [exp] = end - start ;
 
@@ -240,12 +255,12 @@ int main (int argc, char **argv)
 	{
             fprintf(stderr, "ERROR: the array is not properly sorted\n") ;
             exit (-1) ;
-	}      
+	}
     }
-  
+
   av = average (experiments) ;
   printf ("\n qsort parallel \t %Ld cycles\n\n", av-residu) ;
-  
+
   //   print_array (X) ;
-  
+
 }
