@@ -10,7 +10,7 @@ qsort: qsort.o
 	gcc -fopenmp -o qsort qsort.o
 
 %.o: %.c
-	gcc -c -O0 -fopenmp $^
+	gcc -c -O2 -fopenmp $^
 
 clean:
-	rm -f triangular_matrix bubble *.o *~
+	rm -f triangular_matrix bubble qsort *.o *~

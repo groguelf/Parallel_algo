@@ -101,7 +101,6 @@ void parallel_bubble_sort (int *T, const int size)
     register int i;
     register int j;
     register int k;
-    int max = 0;
 
     do {
       swapped = false;
