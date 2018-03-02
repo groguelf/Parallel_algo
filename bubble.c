@@ -104,7 +104,6 @@ void parallel_bubble_sort (int *T, const int size)
     register int i;
     register int j;
     register int k;
-    int max = 0;
     register int chunk_size;
     chunk_size = size / omp_get_max_threads();
 
@@ -117,8 +116,8 @@ void parallel_bubble_sort (int *T, const int size)
      do {
       swapped = false;
       #pragma omp parallel for schedule(dynamic) private(j, tmp) reduction(||:swapped) 
-      for (i = 0; i < size / chunk_size; i++){
-        for(j = i*chunk_size; j < (i+1) * chunk_size -1; j++){
+      for (i = 0; i < size/chunk_size; i++){
+        for(j = i*chunk_size; j < (i+1)*chunk_size-1; j++){
           if (T[j] > T[j+1]) {
             tmp = T[j];
             T[j] = T[j+1];
@@ -137,7 +136,6 @@ void parallel_bubble_sort (int *T, const int size)
           swapped = true;
         }
       }
-
   } while (swapped);
 
     return ;

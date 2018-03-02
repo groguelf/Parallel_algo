@@ -142,29 +142,24 @@ void parallel_qsort_sort (int *T, const int size)
 
     /* parallel sorting based on libc qsort() function +
      * sequential merging */
+  
      register int i;
      register int j;
      register int k;
-     int num_threads = 0;
+     register int chunk_size = size/omp_get_max_threads();
 
      #pragma omp parallel for schedule(dynamic)
-     for (i = 0; i < size; i += size/omp_get_num_threads()){
-       if (i == 0){
-         num_threads = omp_get_num_threads();
-       }
-       // We have omp_get_num_threads() which can divise size, otherwise we can't use the merge function
-       qsort(&T[i], size/omp_get_num_threads(), sizeof(int), compare);
+     for (i = 0; i < size; i += chunk_size){
+       // We have that omp_get_max_threads() can divise size, otherwise we can't use the merge function
+       qsort(&T[i], chunk_size, sizeof(int), compare);
      }
 
-     for (k = 0; k < log2(num_threads); k++){
-         //fprintf(stderr, "k: %d\n", k);
-         for (j = 0; j < size; j += 2*(k+1)*size/num_threads){
-             //fprintf(stderr, "j: %d\n", j);
-             merge(&T[j], (k+1)*size/num_threads);
+     for (k = 0; k < log2(omp_get_max_threads()); k++){
+       for (j = 0; j < size; j += 2*(int)pow(2, k)*chunk_size){
+	 merge(&T[j], (int)pow(2, k)*chunk_size);
          }
      }
-     fprintf(stderr, "------------------\n");
-     //print_array(T);
+     
      return ;
 
 }
@@ -173,9 +168,28 @@ void parallel_qsort_sort (int *T, const int size)
 void parallel_qsort_sort1 (int *T, const int size)
 {
 
-    /* TODO: parallel sorting based on libc qsort() function +
+    /* parallel sorting based on libc qsort() function +
      * PARALLEL merging */
+  
+     register int i;
+     register int j;
+     register int k;
+     register int chunk_size = size/omp_get_max_threads();
 
+     #pragma omp parallel for schedule(dynamic)
+     for (i = 0; i < size; i += chunk_size){
+       // We have that omp_get_max_threads() can divise size, otherwise we can't use the merge function
+       qsort(&T[i], chunk_size, sizeof(int), compare);
+     }
+
+     for (k = 0; k < log2(omp_get_max_threads()); k++){
+	 #pragma omp parallel for schedule(dynamic)
+         for (j = 0; j < size; j += 2*(int)pow(2, k)*chunk_size){
+	   merge(&T[j], (int)pow(2, k)*chunk_size);
+         }
+     }
+
+     return ;
 }
 
 
@@ -240,6 +254,7 @@ int main (int argc, char **argv)
       if (! is_sorted (X))
 	{
             fprintf(stderr, "ERROR: the array is not properly sorted\n") ;
+	    print_array (X) ;
             exit (-1) ;
 	}
     }
