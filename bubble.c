@@ -5,7 +5,10 @@
 #include <x86intrin.h>
 
 #define NBEXPERIMENTS    7
+#define chunk_size_limit 1024 
 static long long unsigned int experiments [NBEXPERIMENTS] ;
+
+
 
 /*
   bubble sort -- sequential, parallel --
@@ -101,13 +104,22 @@ void parallel_bubble_sort (int *T, const int size)
     register int i;
     register int j;
     register int k;
+    int max = 0;
+    register int chunk_size;
+    chunk_size = size / omp_get_max_threads();
 
-    do {
+    if (chunk_size > chunk_size_limit) {
+      chunk_size = chunk_size_limit;
+    }
+
+    register int first;
+
+     do {
       swapped = false;
-      #pragma omp parallel for schedule(dynamic) private(j, tmp) reduction(||:swapped)
-      for (i = 0; i < size/omp_get_num_threads()+1; i++){
-        for(j = i*omp_get_num_threads(); j < (i+1)*omp_get_num_threads()-1; j++){;
-          if (j < size-1 && T[j] > T[j+1]){
+      #pragma omp parallel for schedule(dynamic) private(j, tmp) reduction(||:swapped) 
+      for (i = 0; i < size / chunk_size; i++){
+        for(j = i*chunk_size; j < (i+1) * chunk_size -1; j++){
+          if (T[j] > T[j+1]) {
             tmp = T[j];
             T[j] = T[j+1];
             T[j+1] = tmp;
@@ -115,18 +127,20 @@ void parallel_bubble_sort (int *T, const int size)
           }
         }
       }
+
       #pragma omp parallel for schedule(dynamic) private(tmp) reduction(||:swapped)
-      for (k = omp_get_num_threads()-1; k < size-1; k += omp_get_num_threads()){
-        if (T[k] > T[k+1]){
+      for (k = chunk_size-1; k < size-1; k += chunk_size){
+        if (T[k] > T[k+1]) {
           tmp = T[k];
           T[k] = T[k+1];
           T[k+1] = tmp;
           swapped = true;
         }
       }
-    } while (swapped);
 
-  return ;
+  } while (swapped);
+
+    return ;
 }
 
 
@@ -181,6 +195,7 @@ int main (int argc, char **argv)
   for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
       init_array (X) ;
+
       start = _rdtsc () ;
 
           parallel_bubble_sort (X, N) ;
@@ -199,8 +214,4 @@ int main (int argc, char **argv)
 
   av = average (experiments) ;
   printf ("\n bubble parallel \t %Ld cycles\n\n", av-residu) ;
-
-
-  // print_array (X) ;
-
 }

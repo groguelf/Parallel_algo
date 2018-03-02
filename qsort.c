@@ -157,10 +157,10 @@ void parallel_qsort_sort (int *T, const int size)
      }
 
      for (k = 0; k < log2(num_threads); k++){
-         fprintf(stderr, "k: %d\n", k);
+         //fprintf(stderr, "k: %d\n", k);
          for (j = 0; j < size; j += 2*(k+1)*size/num_threads){
-             fprintf(stderr, "j: %d\n", j);
-             merge(&T[j], size/num_threads);
+             //fprintf(stderr, "j: %d\n", j);
+             merge(&T[j], (k+1)*size/num_threads);
          }
      }
      fprintf(stderr, "------------------\n");
