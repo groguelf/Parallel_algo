@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include<omp.h>
 
@@ -142,6 +143,8 @@ void parallel_qsort_sort (int *T, const int size)
     /* parallel sorting based on libc qsort() function +
      * sequential merging */
      register int i;
+     register int j;
+     register int k;
      int num_threads = 0;
 
      #pragma omp parallel for schedule(dynamic)
@@ -152,10 +155,15 @@ void parallel_qsort_sort (int *T, const int size)
        // We have omp_get_num_threads() which can divise size, otherwise we can't use the merge function
        qsort(&T[i], size/omp_get_num_threads(), sizeof(int), compare);
      }
-     /*if (size%num_threads != 0){
-       qsort(&T[size-1 - size%num_threads], size%num_threads, sizeof(int), compare);
-     }*/
-     merge(T, size/num_threads);
+
+     for (k = 0; k < log2(num_threads); k++){
+         fprintf(stderr, "k: %d\n", k);
+         for (j = 0; j < size; j += 2*(k+1)*size/num_threads){
+             fprintf(stderr, "j: %d\n", j);
+             merge(&T[j], size/num_threads);
+         }
+     }
+     fprintf(stderr, "------------------\n");
      //print_array(T);
      return ;
 
