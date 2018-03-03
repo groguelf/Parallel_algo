@@ -148,6 +148,11 @@ void parallel_qsort_sort (int *T, const int size)
      register int k;
      register int chunk_size = size/omp_get_max_threads();
 
+     if (size < omp_get_max_threads()){
+        qsort(T, size, sizeof(int), compare);
+        return ;
+     }
+
      #pragma omp parallel for schedule(dynamic)
      for (i = 0; i < size; i += chunk_size){
        // We have that omp_get_max_threads() can divise size, otherwise we can't use the merge function
@@ -175,6 +180,11 @@ void parallel_qsort_sort1 (int *T, const int size)
      register int j;
      register int k;
      register int chunk_size = size/omp_get_max_threads();
+
+     if (size < omp_get_max_threads()){
+        qsort(T, size, sizeof(int), compare);
+        return ;
+     }
 
      #pragma omp parallel for schedule(dynamic)
      for (i = 0; i < size; i += chunk_size){

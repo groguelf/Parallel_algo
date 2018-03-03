@@ -26,7 +26,7 @@ void init_array (array_int T)
     }
 }
 
-void print_array (array_int T)
+void print_array (array_int T, int N)
 {
   register int i ;
 
@@ -63,17 +63,82 @@ long long unsigned int average (long long unsigned int *exps)
   return s / (NBEXPERIMENTS-2) ;
 }
 
-
-
-void merge_sort (int *T, const int size)
+void merge (int *T, const int size)
 {
-    /* TODO: sequential version of the merge sort algorithm */
+  int *X = (int *) malloc (2 * size * sizeof(int)) ;
+
+  int i = 0 ;
+  int j = size ;
+  int k = 0 ;
+
+  while ((i < size) && (j < 2*size))
+    {
+      if (T[i] < T [j])
+	{
+	  X [k] = T [i] ;
+	  i = i + 1 ;
+	}
+      else
+	{
+	  X [k] = T [j] ;
+	  j = j + 1 ;
+	}
+      k = k + 1 ;
+    }
+
+  if (i < size)
+    {
+      for (; i < size; i++, k++)
+	{
+	  X [k] = T [i] ;
+	}
+    }
+  else
+    {
+      for (; j < 2*size; j++, k++)
+	{
+	  X [k] = T [j] ;
+	}
+    }
+
+  memcpy (T, X, 2*size*sizeof(int)) ;
+  free (X) ;
+
+  return ;
+}
+
+int *merge_sort (int *T, int size)
+{
+    /* sequential version of the merge sort algorithm */
+    if (size == 1){
+        return T;
+    } else {
+        merge_sort(T, size/2);
+        merge_sort(T+size/2, size/2); 
+        merge(T, size/2);
+    } 
+
+    return T;
 }
 
 
-void parallel_merge_sort (int *T, const int size)
+int *parallel_merge_sort (int *T, const int size)
 {
-    /* TODO: sequential version of the merge sort algorithm */
+    /* parallel version of the merge sort algorithm */
+    if (size == 1){
+        return T;
+    } else {
+        #pragma omp parallel sections
+        {
+            #pragma omp section
+            merge_sort(T, size/2);
+            #pragma omp section
+            merge_sort(T+size/2, size/2); 
+        }
+        merge(T, size/2);
+    } 
+
+    return T;
 }
 
 
@@ -106,7 +171,6 @@ int main (int argc, char **argv)
     for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
       init_array (X) ;
-      
       start = _rdtsc () ;
 
                merge_sort (X, N) ;
@@ -139,6 +203,7 @@ int main (int argc, char **argv)
 
       if (! is_sorted (X))
 	{
+            print_array(X, N);
             fprintf(stderr, "ERROR: the array is not properly sorted\n") ;
             exit (-1) ;
 	}      
@@ -147,5 +212,4 @@ int main (int argc, char **argv)
   av = average (experiments) ;
   printf ("\n merge sort parallel with tasks\t %Ld cycles\n\n", av-residu) ;
 
-  
 }
