@@ -63,141 +63,52 @@ long long unsigned int average (long long unsigned int *exps)
   return s / (NBEXPERIMENTS-2) ;
 }
 
-// void shuffle(int *array, int  n)
-// {
-//     if (n > 1) 
-//     {
-//         size_t i;
-//         for (i = 0; i < n - 1; i++) 
-//         {
-//           size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-//           int t = array[j];
-//           array[j] = array[i];
-//           array[i] = t;
-//         }
-//     }
-// }
-
-
 void merge (int *T, int size) 
 {
 
-    // print_array(T, size);
     int L[size/2], R[size/2];
-    int i = 0;
-    int j = 0;
-    int k = 0;
+    register int i = 0;
+    register int j = 0;
+    register int k = 0;
+
     for (i = 0; i < size/2 ; i++) {
         L[i] = T[i];
         R[i] = T[(size/2) + i];
     }
-  
-    // printf("LLLL\n");
-    // print_array(L, size/2);
-    // printf("RRRR\n");
-    // print_array(R, size/2);
 
     i = 0;
     j = 0;
-    // print_array(L, size/2);
-    // print_array(R, size/2);
-    while (i < size/2  && j < size/2 ) {
-      if (L[i] <= R[j])
-        {
+
+    while (i < size/2  && j < size/2) {
+      if (L[i] <= R[j]) {
             T[k] = L[i];
             i++;
-        }
-        else
-        {
+        } else {
             T[k] = R[j];
             j++;
         }
         k++;
     }
 
-    while (i < size/2 )
-    {
+    while (i < size/2) {
         T[k] = L[i];
         i++;
         k++;
     }
  
-    while (j < size/2 )
-    {
+    while (j < size/2) {
         T[k] = R[j];
         j++;
         k++;
     }
 } 
-
-void parallel_merge (int *T, int size) 
-{
-
-    int L[size/2], R[size/2];
-    int i = 0;
-    int j = 0;
-    int k = 0;
-    for (i = 0; i < size/2 ; i++) {
-        L[i] = T[i];
-        R[i] = T[(size/2) + i];
-    }
-  
-    // printf("LLLL\n");
-    // print_array(L, size/2);
-    // printf("RRRR\n");
-    // print_array(R, size/2);
-
-    i = 0;
-    j = 0;
-    // print_array(L, size/2);
-    // print_array(R, size/2);
-    while (i < size/2  && j < size/2 ) {
-      if (L[i] <= R[j])
-        {
-            T[k] = L[i];
-            i++;
-        }
-        else
-        {
-            T[k] = R[j];
-            j++;
-        }
-        k++;
-    }
-
-    while (i < size/2 )
-    {
-        T[k] = L[i];
-        i++;
-        k++;
-    }
  
-    while (j < size/2 )
-    {
-        T[k] = R[j];
-        j++;
-        k++;
-    }
-} 
 
 void merge_sort (int *T, int size)
 {
-    /* TODO: sequential version of the merge sort algorithm */
+    /* sequential version of the merge sort algorithm */
 
-    if (size >= 2)
-    {
- 
-       // int *X = (int *) malloc(sizeof(int)*8);
-       // X[0] = 1;
-       // X[1] = 2;
-       // X[2] = 6;
-       // X[3] = 8;
-       // X[4] = 3;
-       // X[5] = 4;
-       // X[6] = 5;
-       // X[7] = 7;
-       // merge(X, 8);
-
+    if (size >= 2) {
         merge_sort(T , size/2);
         merge_sort(T + (size/2), size/2);
         merge(T, size);
@@ -207,10 +118,9 @@ void merge_sort (int *T, int size)
 
 void parallel_merge_sort (int *T, const int size, const int number_of_threads)
 {
-    /* TODO: sequential version of the merge sort algorithm */
-
     /* parallel version of the merge sort algorithm */
-    if (number_of_threads <= 1){
+
+    if (number_of_threads == 1){
         merge_sort(T, size);
     } else {
         #pragma omp parallel sections
@@ -222,8 +132,6 @@ void parallel_merge_sort (int *T, const int size, const int number_of_threads)
         }
         merge(T, size);
     } 
-
-    // return T;
 }
 
 

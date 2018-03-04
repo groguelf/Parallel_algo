@@ -107,11 +107,9 @@ void parallel_bubble_sort (int *T, const int size)
     register int chunk_size;
     chunk_size = size / omp_get_max_threads();
 
-    if (chunk_size > chunk_size_limit) {
+    /*if (chunk_size > chunk_size_limit) {
       chunk_size = chunk_size_limit;
-    }
-
-    register int first;
+    }*/
 
      do {
       swapped = false;
