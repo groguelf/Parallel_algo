@@ -63,82 +63,167 @@ long long unsigned int average (long long unsigned int *exps)
   return s / (NBEXPERIMENTS-2) ;
 }
 
-void merge (int *T, const int size)
+// void shuffle(int *array, int  n)
+// {
+//     if (n > 1) 
+//     {
+//         size_t i;
+//         for (i = 0; i < n - 1; i++) 
+//         {
+//           size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+//           int t = array[j];
+//           array[j] = array[i];
+//           array[i] = t;
+//         }
+//     }
+// }
+
+
+void merge (int *T, int size) 
 {
-  int *X = (int *) malloc (2 * size * sizeof(int)) ;
 
-  int i = 0 ;
-  int j = size ;
-  int k = 0 ;
+    // print_array(T, size);
+    int L[size/2], R[size/2];
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    for (i = 0; i < size/2 ; i++) {
+        L[i] = T[i];
+        R[i] = T[(size/2) + i];
+    }
+  
+    // printf("LLLL\n");
+    // print_array(L, size/2);
+    // printf("RRRR\n");
+    // print_array(R, size/2);
 
-  while ((i < size) && (j < 2*size))
-    {
-      if (T[i] < T [j])
-	{
-	  X [k] = T [i] ;
-	  i = i + 1 ;
-	}
-      else
-	{
-	  X [k] = T [j] ;
-	  j = j + 1 ;
-	}
-      k = k + 1 ;
+    i = 0;
+    j = 0;
+    // print_array(L, size/2);
+    // print_array(R, size/2);
+    while (i < size/2  && j < size/2 ) {
+      if (L[i] <= R[j])
+        {
+            T[k] = L[i];
+            i++;
+        }
+        else
+        {
+            T[k] = R[j];
+            j++;
+        }
+        k++;
     }
 
-  if (i < size)
+    while (i < size/2 )
     {
-      for (; i < size; i++, k++)
-	{
-	  X [k] = T [i] ;
-	}
+        T[k] = L[i];
+        i++;
+        k++;
     }
-  else
+ 
+    while (j < size/2 )
     {
-      for (; j < 2*size; j++, k++)
-	{
-	  X [k] = T [j] ;
-	}
+        T[k] = R[j];
+        j++;
+        k++;
+    }
+} 
+
+void parallel_merge (int *T, int size) 
+{
+
+    int L[size/2], R[size/2];
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    for (i = 0; i < size/2 ; i++) {
+        L[i] = T[i];
+        R[i] = T[(size/2) + i];
+    }
+  
+    // printf("LLLL\n");
+    // print_array(L, size/2);
+    // printf("RRRR\n");
+    // print_array(R, size/2);
+
+    i = 0;
+    j = 0;
+    // print_array(L, size/2);
+    // print_array(R, size/2);
+    while (i < size/2  && j < size/2 ) {
+      if (L[i] <= R[j])
+        {
+            T[k] = L[i];
+            i++;
+        }
+        else
+        {
+            T[k] = R[j];
+            j++;
+        }
+        k++;
     }
 
-  memcpy (T, X, 2*size*sizeof(int)) ;
-  free (X) ;
+    while (i < size/2 )
+    {
+        T[k] = L[i];
+        i++;
+        k++;
+    }
+ 
+    while (j < size/2 )
+    {
+        T[k] = R[j];
+        j++;
+        k++;
+    }
+} 
 
-  return ;
+void merge_sort (int *T, int size)
+{
+    /* TODO: sequential version of the merge sort algorithm */
+
+    if (size >= 2)
+    {
+ 
+       // int *X = (int *) malloc(sizeof(int)*8);
+       // X[0] = 1;
+       // X[1] = 2;
+       // X[2] = 6;
+       // X[3] = 8;
+       // X[4] = 3;
+       // X[5] = 4;
+       // X[6] = 5;
+       // X[7] = 7;
+       // merge(X, 8);
+
+        merge_sort(T , size/2);
+        merge_sort(T + (size/2), size/2);
+        merge(T, size);
+    }
 }
 
-int *merge_sort (int *T, int size)
+
+void parallel_merge_sort (int *T, const int size, const int number_of_threads)
 {
-    /* sequential version of the merge sort algorithm */
-    if (size == 1){
-        return T;
-    } else {
-        merge_sort(T, size/2);
-        merge_sort(T+size/2, size/2); 
-        merge(T, size/2);
-    } 
+    /* TODO: sequential version of the merge sort algorithm */
 
-    return T;
-}
-
-
-int *parallel_merge_sort (int *T, const int size)
-{
     /* parallel version of the merge sort algorithm */
-    if (size == 1){
-        return T;
+    if (number_of_threads <= 1){
+        merge_sort(T, size);
     } else {
         #pragma omp parallel sections
         {
             #pragma omp section
-            merge_sort(T, size/2);
+            parallel_merge_sort(T, size/2, number_of_threads/2);
             #pragma omp section
-            merge_sort(T+size/2, size/2); 
+            parallel_merge_sort(T + size/2, size/2, number_of_threads/2); 
         }
-        merge(T, size/2);
+        merge(T, size);
     } 
 
-    return T;
+    // return T;
 }
 
 
@@ -196,7 +281,7 @@ int main (int argc, char **argv)
       
       start = _rdtsc () ;
 
-           parallel_merge_sort (X, N) ;
+           parallel_merge_sort (X, N, omp_get_max_threads()) ;
      
       end = _rdtsc () ;
       experiments [exp] = end - start ;
