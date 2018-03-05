@@ -123,12 +123,15 @@ void parallel_merge_sort (int *T, const int size, const int number_of_threads)
     if (number_of_threads == 1){
         merge_sort(T, size);
     } else {
-        #pragma omp parallel sections
+        #pragma omp parallel
         {
-            #pragma omp section
-            parallel_merge_sort(T, size/2, number_of_threads/2);
-            #pragma omp section
-            parallel_merge_sort(T + size/2, size/2, number_of_threads/2); 
+	    #pragma omp single
+	    {
+            	#pragma omp task
+            	parallel_merge_sort(T, size/2, number_of_threads/2);
+            	#pragma omp task
+            	parallel_merge_sort(T + size/2, size/2, number_of_threads/2); 
+	    }
         }
         merge(T, size);
     } 
