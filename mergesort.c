@@ -110,11 +110,30 @@ void merge_sort (int *T, int size)
 
     if (size >= 2) {
         merge_sort(T , size/2);
-        merge_sort(T + (size/2), size/2);
+        merge_sort(T + size/2, size/2);
         merge(T, size);
     }
 }
 
+
+void parallel_merge_sort_tasks (int *T, const int size)
+{
+    /* parallel version of the merge sort algorithm */
+
+    if (size > 1){
+        #pragma omp parallel
+        {
+	    #pragma omp single
+	    {
+            	#pragma omp task
+            	parallel_merge_sort_tasks(T, size/2);
+            	#pragma omp task
+            	parallel_merge_sort_tasks(T + size/2, size/2); 
+	    }
+        }
+	merge(T, size);
+    } 
+}
 
 void parallel_merge_sort (int *T, const int size, const int number_of_threads)
 {
@@ -184,7 +203,31 @@ int main (int argc, char **argv)
   av = average (experiments) ;  
   printf ("\n merge sort serial\t\t %Ld cycles\n\n", av-residu) ;
 
-  printf("parallel sorting ...\n");
+  printf("parallel sorting...\n");
+  
+  for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
+    {
+      init_array (X) ;
+      
+      start = _rdtsc () ;
+
+           parallel_merge_sort_tasks (X, N) ;
+     
+      end = _rdtsc () ;
+      experiments [exp] = end - start ;
+
+      if (! is_sorted (X))
+	{
+            print_array(X, N);
+            fprintf(stderr, "ERROR: the array is not properly sorted\n") ;
+            exit (-1) ;
+	}      
+    }
+  
+  av = average (experiments) ;
+  printf ("\n merge sort parallel with tasks\t %Ld cycles\n\n", av-residu) ;
+	
+  printf("parallel sorting...\n");
   
   for (exp = 0 ; exp < NBEXPERIMENTS; exp++)
     {
@@ -206,6 +249,6 @@ int main (int argc, char **argv)
     }
   
   av = average (experiments) ;
-  printf ("\n merge sort parallel with tasks\t %Ld cycles\n\n", av-residu) ;
+  printf ("\n merge sort parallel with tasks and seq\t %Ld cycles\n\n", av-residu) ;
 
 }
