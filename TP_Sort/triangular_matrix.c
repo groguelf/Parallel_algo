@@ -6,6 +6,9 @@
 
 #define NBEXPERIMENTS    7
 
+#define NUM_OF_THREADS   4
+#define CHUNK_SIZE   256
+
 static long long unsigned int experiments [NBEXPERIMENTS] ;
 
 #define N              1024
@@ -134,7 +137,7 @@ void mult_mat_vector_tri_inf1 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(static), private(j, r)
+ #pragma omp parallel for num_threads (NUM_OF_THREADS) schedule(static), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
@@ -157,7 +160,7 @@ void mult_mat_vector_tri_inf2 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(dynamic), private(j, r)
+ #pragma omp parallel for num_threads (NUM_OF_THREADS) schedule(dynamic), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
@@ -179,7 +182,7 @@ void mult_mat_vector_tri_inf3 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(guided), private(j, r)
+ #pragma omp parallel for num_threads (NUM_OF_THREADS) schedule(guided), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
@@ -202,7 +205,7 @@ void mult_mat_vector_tri_inf4 (matrix M, vector b, vector c)
  register unsigned int j;
  register double r;
 
- #pragma omp parallel for schedule(runtime), private(j, r)
+ #pragma omp chunk_size(CHUNK_SIZE) parallel for num_threads (NUM_OF_THREADS) schedule(runtime), private(j, r)
  for (i = 0; i < N; i++){
    r = 0.0;
    for (j = 0; j <= i; j++){
