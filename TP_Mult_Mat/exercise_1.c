@@ -11,12 +11,19 @@ int **initialize_matrix(int number){
   return mat;
 }
 
+void free_matrix(int **mat, int number){
+  for (int i = 0; i < number; i++){
+    free(mat[i]);
+  }
+  free(mat);
+}
+
 void print_matrix(int **matrix, int size){
   for (int i = 0; i < size; i++){
     for(int j = 0; j < size; j++){
-      printf("%d     ", matrix[i][j]);
+      fprintf(stderr, "%d     ", matrix[i][j]);
     }
-    printf("\n");
+    fprintf(stderr, "\n");
   }
 }
 
@@ -78,17 +85,17 @@ int main(int argc, char **argv){
     }
     // MPI_Bcast(&diag, root, MPI_INT, ?, new_comm);
     if (k == 0){
-      printf("k = %d\n", k);
-      printf("rank = %d\n", rank);
-      printf("diag\n");
+      fprintf(stderr, "k = %d\n", k);
+      fprintf(stderr, "rank = %d\n", rank);
+      fprintf(stderr, "diag\n");
       print_matrix(diag, sub_matrix_size);
     }
   }
 
-  free(a);
-  free(b);
-  free(c);
-  free(diag);
+  free_matrix(a, sub_matrix_size);
+  free_matrix(b, sub_matrix_size);
+  free_matrix(c, sub_matrix_size);
+  free_matrix(diag, sub_matrix_size);
   MPI_Finalize();
   return 0;
 }
