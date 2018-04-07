@@ -63,34 +63,26 @@ int main(int argc, char *argv[])
 		C[i] = 0;
 	}
 
-	if (my_rank == 8) {
-		print_matrix(A);
-	}
-
-	/*
-			wrong, change it to preskewing(A, 0, -1 * coords[0], hor_comm);
-	*/
 	// preskewing(A, coords[1], coords[0], hor_comm);
 	preskewing(A, 0, -1 * coords[0], hor_comm);
 	preskewing(B, 1, -1 * coords[1], ver_comm);
 
-
-	if (my_rank == 10) {
-		print_matrix(A);		
+	for (k = 0; k < q; k++) {
+		mul_matrices(A, B, C);
+		/*Horizontal shift of A*/
+		MPI_Cart_shift(hor_comm, 0, -1, &source, &dest); 
+		MPI_Sendrecv_replace(A, p, MPI_INT, dest, 0,source, 0, hor_comm, &status);
+		/*Vertical shift of B*/
+		MPI_Cart_shift(ver_comm, 0, -1, &source, &dest); 
+		MPI_Sendrecv_replace(B, p, MPI_INT, dest, 0,source, 0, ver_comm, &status);		
+				
 	}
-	
-	// for (k = 0; k < q; k++) {
-	// 	mul_matrices(A, B, C);
-	// MPI_Cart_shift(hor_comm, 0, -1, &source, &dest); 
-	// MPI_Sendrecv_replace(A, p, MPI_INT, dest, 0,source, 0, hor_comm, &status);		
-		// horizontal_shift(A);		
-	// }
 	// preskewing(A);
 	// preskewing(B);
 
-	// if (my_rank == 2){
-	// 	print_matrix(C);
-	// }
+	if (my_rank == 0){
+		print_matrix(C);
+	}
 		
 	MPI_Finalize();
 
