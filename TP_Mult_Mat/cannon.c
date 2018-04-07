@@ -9,6 +9,7 @@ void print_matrix(int *);
 void broadcast_row(int);
 void mul_matrices(int *, int *, int *);
 void copy_A(int *, int *);
+void preskewing(int *, int , int , MPI_Comm ); 
 
 MPI_Status status;
 MPI_Comm comm_cart;
@@ -23,12 +24,12 @@ int *old_A;
 int *B;
 int *C;
 int my_rank, p, q;
+int source, dest;
 
 int main(int argc, char *argv[])
 {
 	
 	int i, k;
-	int source, dest;
 	
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -57,28 +58,49 @@ int main(int argc, char *argv[])
 	fill_matrix(A, p, my_rank);
 	fill_matrix(B, p, my_rank);
 
+	
 	for (i=0; i< p; i++) {
 		C[i] = 0;
 	}
 
-	for (k = 0; k < q; k++) {
-		copy_A(A, old_A);
-		broadcast_row(k);
-		mul_matrices(A,B,C);
-		MPI_Cart_shift(ver_comm, coords[1], 1, &source, &dest); 
-		MPI_Sendrecv_replace(B, p, MPI_INT, dest, 0,source, 0, ver_comm, &status);
-		copy_A(old_A, A);
+	if (my_rank == 8) {
+		print_matrix(A);
 	}
-	
-	
 
-	if (my_rank == 0){
-		print_matrix(C);
+	/*
+			wrong, change it to preskewing(A, 0, -1 * coords[0], hor_comm);
+	*/
+	// preskewing(A, coords[1], coords[0], hor_comm);
+	preskewing(A, 0, -1 * coords[0], hor_comm);
+	preskewing(B, 1, -1 * coords[1], ver_comm);
+
+
+	if (my_rank == 10) {
+		print_matrix(A);		
 	}
+	
+	// for (k = 0; k < q; k++) {
+	// 	mul_matrices(A, B, C);
+	// MPI_Cart_shift(hor_comm, 0, -1, &source, &dest); 
+	// MPI_Sendrecv_replace(A, p, MPI_INT, dest, 0,source, 0, hor_comm, &status);		
+		// horizontal_shift(A);		
+	// }
+	// preskewing(A);
+	// preskewing(B);
+
+	// if (my_rank == 2){
+	// 	print_matrix(C);
+	// }
 		
 	MPI_Finalize();
 
 	return 0;
+}
+
+void preskewing(int *matrix, int direction, int steps, MPI_Comm comm) 
+{
+	MPI_Cart_shift(comm, direction, steps, &source, &dest); 
+	MPI_Sendrecv_replace(matrix, p, MPI_INT, dest, 0,source, 0, comm, &status);
 }
 
 void mul_matrices(int *A, int *B, int *C)
@@ -99,7 +121,7 @@ void mul_matrices(int *A, int *B, int *C)
 void broadcast_row(int k)
 {
 	int root = (coords[0]+k) % q;
-	// if (coords[0] == ((coords[1]+k) % q)) {
+	if (coords[0] == ((coords[1]+k) % q)) {
 		MPI_Bcast(
 		    A,
 		    p,
@@ -107,15 +129,15 @@ void broadcast_row(int k)
 		    root,
 		    hor_comm
     	);
-	// } else {
-	// 	MPI_Bcast(
-	// 	    A,
-	// 	    p,
-	// 	    MPI_INT,
-	// 	    root,
-	// 	    hor_comm
- //    	);
-	// }
+	} else {
+		MPI_Bcast(
+		    A,
+		    p,
+		    MPI_INT,
+		    root,
+		    hor_comm
+    	);
+	}
 
 }
 
