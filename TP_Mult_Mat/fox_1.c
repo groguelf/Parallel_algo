@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <math.h>
-#define SUB_SIZE 4
+#define SUB_SIZE 16
 
 void fill_matrix(int *, int );
 void print_matrix(int *);

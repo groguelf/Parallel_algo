@@ -2,7 +2,7 @@ CC=mpicc
 CFLAGS=-g -Wall -Wextra -std=c99
 LFLAGS=-lm
 
-PROGRAM=exercise_1 exercise_2 fox_1 cannon
+PROGRAM=exercise_1 exercise_2 fox_1 cannon fox_2
 
 all: $(PROGRAM)
 
@@ -14,6 +14,9 @@ exercise_2:
 
 fox_1:
 	$(CC) $(CFLAGS) -o fox_1 fox_1.c $(LFLAGS)
+
+fox_2:
+	$(CC) $(CFLAGS) -o cannon cannon.c $(LFLAGS)
 
 cannon:
 	$(CC) $(CFLAGS) -o cannon cannon.c $(LFLAGS)
