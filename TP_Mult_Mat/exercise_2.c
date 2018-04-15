@@ -13,13 +13,6 @@ void mul_matrices(int *A, int *B, int *C, int matrix_size){
     }
 }
 
-void copy(int *from, int *to, int matrix_size){
-	for (int i = 0; i < matrix_size*matrix_size; i++){
-        to[i] = from[i];
-	}
-}
-
-
 void print_matrix(int *matrix, int matrix_size){
     for (int i = 0; i < matrix_size; i++){
         for(int j = 0; j < matrix_size; j++){
@@ -82,21 +75,34 @@ int main(int argc, char **argv){
         }
         B[i] = rank;
     }
+
+	// Preskewing of A    
+    MPI_Cart_shift(hor_comm, coords[0], -coords[0], &source, &dest);
+    MPI_Sendrecv_replace(A, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, hor_comm, &status);
+
+	// Preskewing of B    
+    MPI_Cart_shift(ver_comm, coords[1], -coords[1], &source, &dest);
+    MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
     
     for (int k = 0; k < root; k++){
-        copy(A, old_A, sub_matrix_size);
-
-        //Broadcast of the k th diagonal of A 
-        MPI_Bcast(A, sub_matrix_size*sub_matrix_size, MPI_INT, (coords[0] + k)%root, hor_comm);
-
 	    mul_matrices(A, B, C, sub_matrix_size);
+
+        // Horizontal shift of A
+        MPI_Cart_shift(hor_comm, coords[0], -1, &source, &dest);
+        MPI_Sendrecv_replace(A, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, hor_comm, &status);
 
         // Vertical shift of B
 	    MPI_Cart_shift(ver_comm, coords[1], -1, &source, &dest);
 	    MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
-
-	    copy(old_A, A, sub_matrix_size);
     }
+
+	// Postskewing of A    
+    MPI_Cart_shift(hor_comm, coords[0], coords[0], &source, &dest);
+    MPI_Sendrecv_replace(A, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, hor_comm, &status);
+
+	// Postskewing of B    
+    MPI_Cart_shift(ver_comm, coords[1], coords[1], &source, &dest);
+    MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
 
     printf("rank = %d\n", rank);
     print_matrix(C, sub_matrix_size);
