@@ -3,44 +3,27 @@
 #include <stdlib.h>
 #include <math.h>
 
-int **initialize_matrix(int matrix_size){
-  int **mat = calloc(matrix_size, sizeof(int *));
-  for (int i = 0; i < matrix_size; i++){
-    mat[i] = calloc(matrix_size, sizeof(int));
-  }
-  return mat;
-}
-
-void free_matrix(int **mat, int matrix_size){
-  for (int i = 0; i < matrix_size; i++){
-    free(mat[i]);
-  }
-  free(mat);
-}
-
-void mul_matrices(int **A, int **B, int **C, int matrix_size){
+void mul_matrices(int *A, int *B, int *C, int matrix_size){
   for (int i = 0; i < matrix_size; i++){
     for (int j = 0; j < matrix_size; j++){
       for (int k = 0; k < matrix_size; k++){
-        C[i][j] += A[i][k] * B[k][j];
+        C[i*matrix_size + j] += A[i*matrix_size + k] * B[k*matrix_size + j];
       }
     }
   }
 }
 
-void copy(int **from, int **to, int matrix_size){
-	for (int i = 0; i < matrix_size; i++){
-    for (int j = 0; j < matrix_size; j++){
-      to[i][j] = from[i][j];
-    }
+void copy(int *from, int *to, int matrix_size){
+	for (int i = 0; i < matrix_size*matrix_size; i++){
+        to[i] = from[i];
 	}
 }
 
 
-void print_matrix(int **matrix, int matrix_size){
+void print_matrix(int *matrix, int matrix_size){
   for (int i = 0; i < matrix_size; i++){
     for(int j = 0; j < matrix_size; j++){
-      fprintf(stderr, "%d     ", matrix[i][j]);
+      fprintf(stderr, "%d     ", matrix[i*matrix_size + j]);
     }
     fprintf(stderr, "\n");
   }
@@ -59,7 +42,7 @@ int main(int argc, char **argv){
       fprintf(stderr, "You have to use a perfect square number of processes.\n\n");
     }
     MPI_Finalize();
-    return 0;
+    return 1;
   }
 
   int nnodes = size;
@@ -86,38 +69,38 @@ int main(int argc, char **argv){
 
   int coords[2];
   MPI_Cart_coords(comm, rank, 2, coords);
-  printf("\nrank = %d, coords = (%d, %d)\n", rank, coords[0], coords[1]);
+  //printf("\nrank = %d, coords = (%d, %d)\n", rank, coords[0], coords[1]);
 
   int sub_matrix_size = atoi(argv[1]);
-  int **A = initialize_matrix(sub_matrix_size);
-  int **B = initialize_matrix(sub_matrix_size);
-  int **C = initialize_matrix(sub_matrix_size);
-  int **old_A = initialize_matrix(sub_matrix_size);
+  int *A = calloc(sub_matrix_size*sub_matrix_size, sizeof(int));
+  int *B = calloc(sub_matrix_size*sub_matrix_size, sizeof(int));
+  int *C = calloc(sub_matrix_size*sub_matrix_size, sizeof(int));
+  int *old_A = calloc(sub_matrix_size*sub_matrix_size, sizeof(int));
 
   for (int i = 0; i < sub_matrix_size; i++){
-    A[i][i] = rank;
-    B[0][i] = rank;
+    A[sub_matrix_size*i + i] = rank;
+    B[i] = rank;
   }
 
   for (int k = 0; k < root; k++){
     copy(A, old_A, sub_matrix_size);
-    fprintf(stderr, "\nk = %d, rank = %d and copy done\n", k, rank);
-    MPI_Bcast(A, size, MPI_INT, (coords[0]+k)%root, hor_comm);
-    fprintf(stderr, "\nk = %d, rank = %d and cast done\n", k, rank);
-		mul_matrices(A, B, C, sub_matrix_size);
-    fprintf(stderr, "\nk = %d, rank = %d and mult done\n", k, rank);
-		MPI_Cart_shift(ver_comm, coords[1], 1, &source, &dest);
-		MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
-		copy(old_A, A, sub_matrix_size);
+    //fprintf(stderr, "\nk = %d, rank = %d and copy done\n", k, rank);
+    MPI_Bcast(A, sub_matrix_size*sub_matrix_size, MPI_INT, (coords[0]+k)%root, hor_comm);
+    //fprintf(stderr, "\nk = %d, rank = %d and cast done\n", k, rank);
+	mul_matrices(A, B, C, sub_matrix_size);
+    //fprintf(stderr, "\nk = %d, rank = %d and mult done\n", k, rank);
+	MPI_Cart_shift(ver_comm, coords[1], 1, &source, &dest);
+	MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
+	copy(old_A, A, sub_matrix_size);
   }
 
   fprintf(stderr, "rank = %d\n", rank);
   print_matrix(C, sub_matrix_size);
 
-  free_matrix(A, sub_matrix_size);
-  free_matrix(B, sub_matrix_size);
-  free_matrix(C, sub_matrix_size);
-  free_matrix(old_A, sub_matrix_size);
+  free(A);
+  free(B);
+  free(C);
+  free(old_A);
   MPI_Finalize();
   return 0;
 }
