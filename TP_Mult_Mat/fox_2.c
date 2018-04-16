@@ -107,9 +107,9 @@ int main(int argc, char *argv[])
 		MPI_Cart_shift(ver_comm, coords[1], -1, &source, &dest); 
 		MPI_Sendrecv_replace(b, sub_matrix_size, MPI_INT, dest, 0,source, 0, ver_comm, &status);
 		copy_A(old_a, a);
-		MPI_Barrier(comm_cart);
+		//MPI_Barrier(comm_cart);
 	} 
-	MPI_Barrier(comm_cart);
+	//MPI_Barrier(comm_cart);
 
 	MPI_Gatherv(
 	    c,
