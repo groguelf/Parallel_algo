@@ -78,6 +78,9 @@ int main(int argc, char **argv){
         B[i] = rank;
     }
 
+    double start, end;
+    start = MPI_Wtime();
+
 	// Preskewing of A    
     MPI_Cart_shift(hor_comm, coords[0], -coords[0], &source, &dest);
     MPI_Sendrecv_replace(A, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, hor_comm, &status);
@@ -106,8 +109,15 @@ int main(int argc, char **argv){
     MPI_Cart_shift(ver_comm, coords[1], coords[1], &source, &dest);
     MPI_Sendrecv_replace(B, sub_matrix_size*sub_matrix_size, MPI_INT, dest, 0, source, 0, ver_comm, &status);
 
-    printf("rank = %d\n", rank);
-    print_matrix(C, sub_matrix_size);
+    end = MPI_Wtime();
+
+    //printf("rank = %d\n", rank);
+    //print_matrix(C, sub_matrix_size);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == 0){
+        printf("\nRealized in %f s.\n", end - start);
+    }
 
     free(A);
     free(B);

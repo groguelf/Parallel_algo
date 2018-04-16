@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
 	C = (int *) malloc(sizeof(int) * matix_size);
 
 	a = (int *) malloc(sizeof(int) * sub_matrix_size);
-	old_a = (int *) malloc(sizeof(int) * sub_matrix_size);
 	b = (int *) malloc(sizeof(int) * sub_matrix_size);
 	c = (int *) malloc(sizeof(int) * sub_matrix_size);
 
@@ -99,6 +98,13 @@ int main(int argc, char *argv[])
         }
     }
 
+    for (i =0; i < sub_matrix_size; i++){
+    	c[i] = 0;
+    }
+
+    double start, end;
+    start = MPI_Wtime();
+
     MPI_Scatterv(A, sendcounts, displs, type, a, sub_matrix_size, MPI_INT, 0, comm_cart);
     MPI_Scatterv(B, sendcounts, displs, type, b, sub_matrix_size, MPI_INT, 0, comm_cart);
 
@@ -108,9 +114,6 @@ int main(int argc, char *argv[])
 	// if (my_rank == 1)
 	// 	print_matrix(a, 4);
 
-    for (i =0; i < sub_matrix_size; i++){
-    	c[i] = 0;
-    }
 
 		/* Pre-skewing */
 	skewing(a, 0, -1 * coords[0], hor_comm, sub_matrix_size);
@@ -146,10 +149,16 @@ int main(int argc, char *argv[])
 
 	
 	if (my_rank == 0){
-		print_matrix(C, matrix_dimension);
+		//print_matrix(C, matrix_dimension);
+        end = MPI_Wtime();
+        printf("\nRealized in %f s.\n", end - start);
 	}
-	// free(A);
-	// free(a);
+	free(A);
+	free(B);
+	free(C);
+	free(a);
+	free(b);
+	free(c);
 	MPI_Finalize();
 
 	return 0;

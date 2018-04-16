@@ -85,6 +85,9 @@ int main(int argc, char **argv){
         B[i] = rank;
     }
     
+    double start, end;
+    start = MPI_Wtime();
+
     for (int k = 0; k < root; k++){
         copy(A, old_A, sub_matrix_size);
 
@@ -100,8 +103,15 @@ int main(int argc, char **argv){
 	    copy(old_A, A, sub_matrix_size);
     }
 
-    printf("rank = %d\n", rank);
-    print_matrix(C, sub_matrix_size);
+    MPI_Barrier(MPI_COMM_WORLD);
+    end = MPI_Wtime();
+
+    //printf("rank = %d\n", rank);
+    //print_matrix(C, sub_matrix_size);
+   
+    if (rank == 0){
+        printf("\nRealized in %f s.\n", end - start);
+    }
 
     free(A);
     free(B);
