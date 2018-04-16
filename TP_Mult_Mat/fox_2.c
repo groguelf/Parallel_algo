@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <math.h>
-// #define MATRIX_SIZE 64
 
 void fill_matrix(int *, int);
 void print_matrix(int *, int);
@@ -41,14 +40,23 @@ int main(int argc, char *argv[])
 	}
 
 	int matrix_dimension = atoi(argv[1]);
-	int matrix_size = matrix_dimension*matrix_dimension;
+	if (matrix_dimension % 2 != 0) {
+		printf("Matrix matrix dimension should be even\n");
+		exit(-2);	
+	}
+
+	if ((matrix_dimension % q) != 0) {
+		printf("the square root of number of Processes should devide matrix dimension\n");
+		exit(-2);
+	}
+
+	int matix_size = matrix_dimension*matrix_dimension;
 	int sub_matrix_size = (matrix_dimension*matrix_dimension)/p;
 	int sub_matrix_dim = sqrt(sub_matrix_size);
 
-	
-	A = (int *) malloc(sizeof(int) * matrix_size);
-	B = (int *) malloc(sizeof(int) * matrix_size);
-	C = (int *) malloc(sizeof(int) * matrix_size);
+	A = (int *) malloc(sizeof(int) * matix_size);
+	B = (int *) malloc(sizeof(int) * matix_size);
+	C = (int *) malloc(sizeof(int) * matix_size);
 
 	a = (int *) malloc(sizeof(int) * sub_matrix_size);
 	old_a = (int *) malloc(sizeof(int) * sub_matrix_size);
@@ -68,8 +76,8 @@ int main(int argc, char *argv[])
 	MPI_Cart_sub(comm_cart, ver_dims, &ver_comm);
 
 	if (my_rank == 0){
-		fill_matrix(A, matrix_size);
-		fill_matrix(B, matrix_size);
+		fill_matrix(A, matix_size);
+		fill_matrix(B, matix_size);
 	}
 
 
@@ -125,8 +133,10 @@ int main(int argc, char *argv[])
 	    comm_cart
 	);
 
-	if (my_rank == 0)
-		print_matrix(C,8);
+	
+	if (my_rank == 0){
+		print_matrix(C, matrix_dimension);
+	}
 	// free(A);
 	// free(a);
 	MPI_Finalize();
