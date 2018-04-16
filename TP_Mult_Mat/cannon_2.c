@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <mpi.h>
 #include <math.h>
-#define MATRIX_SIZE 64
 
 void fill_matrix(int *, int);
 void print_matrix(int *, int);
-void broadcast_row(int);
-void mul_matrices(int *, int *, int *);
-void copy_A(int *, int *);
+void broadcast_row(int, int);
+void mul_matrices(int *, int *, int *, int);
+void copy_A(int *, int *, int);
+void skewing(int *, int , int , MPI_Comm, int); 
 
 MPI_Status status;
 MPI_Comm comm_cart;
@@ -25,6 +25,7 @@ int *old_a;
 int *b;
 int *c;
 int my_rank, p, q;
+int source, dest;
 
 int main(int argc, char *argv[])
 {
@@ -40,18 +41,29 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	int sub_matrix_size = MATRIX_SIZE/p;
+	int matrix_dimension = atoi(argv[1]);
+	if (matrix_dimension % 2 != 0) {
+		printf("Matrix matrix dimension should be even\n");
+		exit(-2);	
+	}
+
+	if ((matrix_dimension % q) != 0) {
+		printf("the square root of number of Processes should devide matrix dimension\n");
+		exit(-2);
+	}
+
+	int matix_size = matrix_dimension*matrix_dimension;
+	int sub_matrix_size = (matrix_dimension*matrix_dimension)/p;
 	int sub_matrix_dim = sqrt(sub_matrix_size);
 
-	int matrix_dimension = sqrt(MATRIX_SIZE);
-	A = (int *) malloc(sizeof(int) * MATRIX_SIZE);
-	B = (int *) malloc(sizeof(int) * MATRIX_SIZE);
-	C = (int *) malloc(sizeof(int) * MATRIX_SIZE);
+	A = (int *) malloc(sizeof(int) * matix_size);
+	B = (int *) malloc(sizeof(int) * matix_size);
+	C = (int *) malloc(sizeof(int) * matix_size);
 
-	a = (int *) malloc(sizeof(int) * MATRIX_SIZE/p);
-	old_a = (int *) malloc(sizeof(int) * MATRIX_SIZE/p);
-	b = (int *) malloc(sizeof(int) * MATRIX_SIZE/p);
-	c = (int *) malloc(sizeof(int) * MATRIX_SIZE/p);
+	a = (int *) malloc(sizeof(int) * sub_matrix_size);
+	old_a = (int *) malloc(sizeof(int) * sub_matrix_size);
+	b = (int *) malloc(sizeof(int) * sub_matrix_size);
+	c = (int *) malloc(sizeof(int) * sub_matrix_size);
 
 	ndims = 2;
 	period[0] = 1; period[1] = 1;
@@ -66,8 +78,8 @@ int main(int argc, char *argv[])
 	MPI_Cart_sub(comm_cart, ver_dims, &ver_comm);
 
 	if (my_rank == 0){
-		fill_matrix(A, 0);
-		fill_matrix(B, 0);
+		fill_matrix(A, matix_size);
+		fill_matrix(B, matix_size);
 	}
 
 
@@ -100,16 +112,25 @@ int main(int argc, char *argv[])
     	c[i] = 0;
     }
 
+		/* Pre-skewing */
+	skewing(a, 0, -1 * coords[0], hor_comm, sub_matrix_size);
+	skewing(b, 1, -1 * coords[1], ver_comm, sub_matrix_size);
+
+
 	for (k = 0; k < q; k++) {
-		copy_A(a, old_a);
-		broadcast_row(k);
-		mul_matrices(a,b,c);
-		MPI_Cart_shift(ver_comm, coords[1], -1, &source, &dest); 
-		MPI_Sendrecv_replace(b, sub_matrix_size, MPI_INT, dest, 0,source, 0, ver_comm, &status);
-		copy_A(old_a, a);
-		MPI_Barrier(comm_cart);
-	} 
-	MPI_Barrier(comm_cart);
+		mul_matrices(a, b, c, sub_matrix_dim);
+		/*Horizontal shift of A*/
+		MPI_Cart_shift(hor_comm, 0, -1, &source, &dest); 
+		MPI_Sendrecv_replace(a, sub_matrix_size, MPI_INT, dest, 0,source, 0, hor_comm, &status);
+		/*Vertical shift of B*/
+		MPI_Cart_shift(ver_comm, 0, -1, &source, &dest); 
+		MPI_Sendrecv_replace(b, sub_matrix_size, MPI_INT, dest, 0,source, 0, ver_comm, &status);		
+				
+	}
+
+	/* post-skewing */
+	skewing(a, 0, coords[0], hor_comm, sub_matrix_size);
+	skewing(b, 1, coords[1], ver_comm, sub_matrix_size);
 
 	MPI_Gatherv(
 	    c,
@@ -123,8 +144,10 @@ int main(int argc, char *argv[])
 	    comm_cart
 	);
 
-	if (my_rank == 0)
-		print_matrix(C,8);
+	
+	if (my_rank == 0){
+		print_matrix(C, matrix_dimension);
+	}
 	// free(A);
 	// free(a);
 	MPI_Finalize();
@@ -132,10 +155,15 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void mul_matrices(int *a, int *b, int *c)
+void skewing(int *matrix, int direction, int steps, MPI_Comm comm, int sub_matrix_size) 
+{
+	MPI_Cart_shift(comm, direction, steps, &source, &dest); 
+	MPI_Sendrecv_replace(matrix, sub_matrix_size, MPI_INT, dest, 0,source, 0, comm, &status);
+}
+
+void mul_matrices(int *a, int *b, int *c, int matrix_dimension)
 {
     int i, j, k;
-    int matrix_dimension = sqrt(MATRIX_SIZE/p);
     for (i = 0; i < matrix_dimension; i++)
     {
         for (j = 0; j < matrix_dimension; j++)
@@ -146,22 +174,21 @@ void mul_matrices(int *a, int *b, int *c)
     }
 }
 
-void broadcast_row(int k)
+void broadcast_row(int k, int sub_matrix_size)
 {
 	int root = (coords[0]+k) % q;
 	MPI_Bcast(
 	    a,
-	    MATRIX_SIZE/p,
+	    sub_matrix_size,
 	    MPI_INT,
 	    root,
 	    hor_comm
 	);
 }
 
-void fill_matrix(int *matrix, int my_rank) {
-	int i,j;
-	int matrix_dimension = sqrt(MATRIX_SIZE); 
-	for (i = 0; i < MATRIX_SIZE; i++){
+void fill_matrix(int *matrix, int matrix_size) {
+	int i;
+	for (i = 0; i < matrix_size; i++){
 		matrix[i] = i;
 	} 
 }
@@ -177,10 +204,10 @@ void print_matrix(int *matrix, int matrix_dimension)
 	}
 }
 
-void copy_A(int *from, int *to)
+void copy_A(int *from, int *to, int matrix_size)
 {
 	int i;
-	for (i = 0; i < MATRIX_SIZE/p; i++) {
+	for (i = 0; i < matrix_size; i++) {
 		to[i] = from[i];
 	}
 }
