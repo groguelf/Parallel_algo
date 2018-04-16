@@ -77,6 +77,7 @@ int main(int argc, char **argv){
     int *old_A = calloc(sub_matrix_size*sub_matrix_size, sizeof(int));
 
     // Fill A and B with some values
+    // You can put what you want
     for (int i = 0; i < sub_matrix_size; i++){
         for (int j = 0; j < sub_matrix_size; j++){
             A[sub_matrix_size*i + j] = rank;

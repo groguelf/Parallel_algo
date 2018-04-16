@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+if [ "$#" -ne 3 ]; then
   echo ""
-  echo -e "Usage: \n\t for exercise_1 and exercise_2: \n\t\t./script.sh program number_of_processes sub_matrix_size"
-  echo -e "\n\t for fox_2: \n\t\t./script.sh program number_of_processes"
+  echo -e "Usage: \n\t For exercise_1 and exercise_2: \n\t\t./script.sh program number_of_processes sub_matrix_size"
+  echo -e "\n\t For fox_2: \n\t\t./script.sh program number_of_processes matrix_dimension"
   echo ""
 else
   echo ""

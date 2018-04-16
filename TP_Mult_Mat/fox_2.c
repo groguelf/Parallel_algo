@@ -41,14 +41,14 @@ int main(int argc, char *argv[])
 	}
 
 	int matrix_dimension = atoi(argv[1]);
-	int matix_size = matrix_dimension*matrix_dimension;
+	int matrix_size = matrix_dimension*matrix_dimension;
 	int sub_matrix_size = (matrix_dimension*matrix_dimension)/p;
 	int sub_matrix_dim = sqrt(sub_matrix_size);
 
 	
-	A = (int *) malloc(sizeof(int) * matix_size);
-	B = (int *) malloc(sizeof(int) * matix_size);
-	C = (int *) malloc(sizeof(int) * matix_size);
+	A = (int *) malloc(sizeof(int) * matrix_size);
+	B = (int *) malloc(sizeof(int) * matrix_size);
+	C = (int *) malloc(sizeof(int) * matrix_size);
 
 	a = (int *) malloc(sizeof(int) * sub_matrix_size);
 	old_a = (int *) malloc(sizeof(int) * sub_matrix_size);
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 	MPI_Cart_sub(comm_cart, ver_dims, &ver_comm);
 
 	if (my_rank == 0){
-		fill_matrix(A, matix_size);
-		fill_matrix(B, matix_size);
+		fill_matrix(A, matrix_size);
+		fill_matrix(B, matrix_size);
 	}
 
 
